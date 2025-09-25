@@ -1,15 +1,53 @@
-
-import React, { useState } from "react";
-import TeacherDashboard from "./TeacherDashboard";
+import React, { useState, useEffect } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import LoginPage from "./LoginPage";
+import SignupPage from "./SignupPage";
 import StudentDashboard from "./StudentDashboard";
+import TeacherDashboard from "./TeacherDashboard";
 
 export default function App() {
-  const [classes, setClasses] = useState([]);
-  const [role, setRole] = useState("teacher");
+  const [user, setUser] = useState(null);
 
-  const addClass = (title, description, schedule) => {
+  const [classes, setClasses] = useState([
+    {
+      id: 1,
+      title: "Chemistry 101",
+      description: "Intro to basic chemistry",
+      schedule: "2025-10-27T10:00",
+      attendees: [{ name: "John", email: "john@example.com" }],
+      feedback: [
+        { attendee: { name: "John" }, rating: 5, comments: "Great class!" },
+      ],
+    },
+    {
+      id: 2,
+      title: "Physics 202",
+      description: "Advanced mechanics",
+      schedule: "2025-10-28T14:00",
+      attendees: [],
+      feedback: [],
+    },
+  ]);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("currentUser");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem("currentUser");
+  };
+
+  const handleAddClass = (title, description, schedule) => {
     const newClass = {
-      id: Date.now(),
+      id: classes.length + 1,
       title,
       description,
       schedule,
@@ -19,53 +57,69 @@ export default function App() {
     setClasses([...classes, newClass]);
   };
 
-  const enrollStudent = (classId, name, email) => {
-    setClasses((prev) =>
-      prev.map((cls) =>
-        cls.id === classId
-          ? { ...cls, attendees: [...cls.attendees, { name, email }] }
-          : cls
-      )
-    );
-  };
-
-  const addFeedback = (classId, email, rating, comments) => {
-    setClasses((prev) =>
-      prev.map((cls) => {
-        if (cls.id !== classId) return cls;
-        const attendee = cls.attendees.find((a) => a.email === email);
-        if (!attendee) return cls;
-        return {
-          ...cls,
-          feedback: [...cls.feedback, { attendee, rating, comments }],
-        };
-      })
-    );
-  };
-
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Class Scheduler</h1>
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-          className="border px-2 py-1 rounded"
-        >
-          <option value="teacher">Teacher View</option>
-          <option value="student">Student View</option>
-        </select>
-      </div>
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" />} />
+      <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+      <Route path="/signup" element={<SignupPage />} />
 
-      {role === "teacher" ? (
-        <TeacherDashboard classes={classes} onAddClass={addClass} />
-      ) : (
-        <StudentDashboard
-          classes={classes}
-          onEnroll={enrollStudent}
-          onAddFeedback={addFeedback}
-        />
-      )}
-    </div>
+      <Route
+        path="/student-dashboard"
+        element={
+          user?.role === "student" ? (
+            <StudentDashboard
+              classes={classes}
+              user={user}
+              onEnroll={(classId, name, email) => {
+                setClasses((prev) =>
+                  prev.map((cls) =>
+                    cls.id === classId
+                      ? {
+                          ...cls,
+                          attendees: [...cls.attendees, { name, email }],
+                        }
+                      : cls
+                  )
+                );
+              }}
+              onAddFeedback={(classId, email, rating, comments) => {
+                setClasses((prev) =>
+                  prev.map((cls) =>
+                    cls.id === classId
+                      ? {
+                          ...cls,
+                          feedback: [
+                            ...cls.feedback,
+                            { attendee: { name: user.name }, rating, comments },
+                          ],
+                        }
+                      : cls
+                  )
+                );
+              }}
+              onLogout={handleLogout}
+            />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
+
+      <Route
+        path="/teacher-dashboard"
+        element={
+          user?.role === "teacher" ? (
+            <TeacherDashboard
+              classes={classes}
+              onAddClass={handleAddClass}
+              user={user}
+              onLogout={handleLogout}
+            />
+          ) : (
+            <Navigate to="/login" />
+          )
+        }
+      />
+    </Routes>
   );
 }

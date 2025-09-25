@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-export default function TeacherDashboard({ classes, onAddClass }) {
+export default function TeacherDashboard({ classes, onAddClass, user, onLogout }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [schedule, setSchedule] = useState("");
@@ -15,7 +15,17 @@ export default function TeacherDashboard({ classes, onAddClass }) {
   };
 
   return (
-    <div>
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Welcome {user?.name}</h1>
+        <button
+          onClick={onLogout}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+        >
+          Log Out
+        </button>
+      </div>
+
       <form
         onSubmit={handleSubmit}
         className="mb-6 p-4 border rounded-lg shadow-sm space-y-2"
@@ -54,7 +64,8 @@ export default function TeacherDashboard({ classes, onAddClass }) {
           <li key={cls.id} className="p-3 border rounded">
             <h3 className="font-bold">{cls.title}</h3>
             <p>{cls.description}</p>
-            <p className="text-sm text-gray-600">📅 {cls.schedule}</p>
+            <p className="text-sm text-gray-600">{cls.schedule}</p>
+
             <p className="mt-2 font-semibold">Attendees:</p>
             <ul className="list-disc ml-5">
               {cls.attendees.map((a, i) => (
@@ -63,6 +74,7 @@ export default function TeacherDashboard({ classes, onAddClass }) {
                 </li>
               ))}
             </ul>
+
             <p className="mt-2 font-semibold">Feedback:</p>
             <ul className="list-disc ml-5">
               {cls.feedback.map((f, i) => (
