@@ -4,8 +4,7 @@ import AuthInput from "./AuthInput";
 import RoleSelect from "./RoleSelect";
 
 export default function LoginPage({ onLogin }) {
-  const [identifier, setIdentifier] = useState(""); // email for students, username for teachers
-  const [password, setPassword] = useState("");
+  const [identifier, setIdentifier] = useState(""); 
   const [role, setRole] = useState("");
   const navigate = useNavigate();
 
