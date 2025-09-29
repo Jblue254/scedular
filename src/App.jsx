@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import LoginPage from "./LoginPage";
 import SignupPage from "./SignupPage";
 import StudentDashboard from "./StudentDashboard";
@@ -7,6 +7,8 @@ import TeacherDashboard from "./TeacherDashboard";
 
 export default function App() {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); // prevent flicker on refresh
+  const location = useLocation();
 
   const [classes, setClasses] = useState([
     {
@@ -34,10 +36,12 @@ export default function App() {
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
+    setLoading(false);
   }, []);
 
   const handleLogin = (userData) => {
     setUser(userData);
+    localStorage.setItem("currentUser", JSON.stringify(userData));
   };
 
   const handleLogout = () => {
@@ -57,11 +61,41 @@ export default function App() {
     setClasses([...classes, newClass]);
   };
 
+  if (loading) return null; // wait until localStorage is checked
+
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" />} />
-      <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-      <Route path="/signup" element={<SignupPage />} />
+      {/* Redirect root depending on login state */}
+      <Route
+        path="/"
+        element={
+          user ? (
+            user.role === "student" ? (
+              <Navigate to="/student-dashboard" replace />
+            ) : (
+              <Navigate to="/teacher-dashboard" replace />
+            )
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+
+      <Route
+        path="/login"
+        element={
+          user ? (
+            <Navigate to={user.role === "student" ? "/student-dashboard" : "/teacher-dashboard"} />
+          ) : (
+            <LoginPage onLogin={handleLogin} />
+          )
+        }
+      />
+
+      <Route
+        path="/signup"
+        element={user ? <Navigate to="/" /> : <SignupPage />}
+      />
 
       <Route
         path="/student-dashboard"
@@ -74,10 +108,7 @@ export default function App() {
                 setClasses((prev) =>
                   prev.map((cls) =>
                     cls.id === classId
-                      ? {
-                          ...cls,
-                          attendees: [...cls.attendees, { name, email }],
-                        }
+                      ? { ...cls, attendees: [...cls.attendees, { name, email }] }
                       : cls
                   )
                 );
@@ -100,7 +131,7 @@ export default function App() {
               onLogout={handleLogout}
             />
           ) : (
-            <Navigate to="/login" />
+            <Navigate to="/login" state={{ from: location }} />
           )
         }
       />
@@ -116,7 +147,7 @@ export default function App() {
               onLogout={handleLogout}
             />
           ) : (
-            <Navigate to="/login" />
+            <Navigate to="/login" state={{ from: location }} />
           )
         }
       />

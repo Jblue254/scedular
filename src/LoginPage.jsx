@@ -5,6 +5,7 @@ import RoleSelect from "./RoleSelect";
 
 export default function LoginPage({ onLogin }) {
   const [identifier, setIdentifier] = useState(""); 
+  const [password, setPassword] = useState("");   // <-- FIX
   const [role, setRole] = useState("");
   const navigate = useNavigate();
 
